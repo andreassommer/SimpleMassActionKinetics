@@ -1,0 +1,125 @@
+! Modell fuer GMCSF und IL6 Crosstalk in JAK/STAT und MAPK Pathways
+! =================================================================
+
+
+! Name des Modells
+! ================
+$MODEL JakStatMapk
+
+
+
+! Namen und Reihenfolge der Spezies
+! =================================
+
+$SPECIES GMCSF        ! Autokrines GMCSF, Stimulus als Steuerung!
+$SPECIES GMCSF_RC
+$SPECIES GMCSF_LRC
+$SPECIES GMCSF_LRC
+$SPECIES GMCSF_LRC_SHP2
+!$SPECIES STAT5
+!$SPECIES pSTAT5
+!$SPECIES pSTAT5_nuc
+
+$SPECIES IL6          ! Autokrines IL6, Stimulus als Steuerung!
+$SPECIES IL6_RC
+$SPECIES IL6_LRC
+$SPECIES IL6_LRC_SHP2
+$SPECIES STAT3
+$SPECIES pSTAT3
+$SPECIES pSTAT3_nuc
+
+$SPECIES SHP2
+$SPECIES pSHP2
+
+$SPECIES uERK
+$SPECIES pERK
+$SPECIES pERK_nuc
+
+$SPECIES SOCS3_mRNA
+$SPECIES SOCS3
+$SPECIES IL6_LRC_SOCS3
+$SPECIES GMCSF_LRC_SOCS3
+
+$SPECIES inhibix   ! pSTAT3-Inhibitor, wird deaktiviert durch GMCSF_LRC
+
+
+! Parameter-Namen
+! ===============
+$PARAMETER p
+$PARAMETER IL6stim     ! werden in Matlab-Kopf
+$PARAMETER GMCSFstim   ! als Parameter uebernommen
+ 
+
+! Reaktionen
+! ==========
+!           Reaktionsname                          : Rate   : Modifier       :                    Edukte   ==>   Produkte
+
+! Autokrine IL6- und GMCSF-Produktion
+$REACTION   Andauernde GMCSF-Produktion            : p(01)  :                :                             ==>   GMCSF
+$REACTION   Andauernde IL6-Produktion              : p(02)  :                :                             ==>   IL6
+
+! Ligand-Rezeptor-Verbindungen 
+$REACTION   GMCSF-Rezeptoraktivierung              : p(03)  :                :          GMCSF + GMCSF_RC   ==>   GMCSF_LRC     ! GMCSFstim als STRG
+$REACTION   IL6-Rezeptoraktivierung                : p(04)  :                :              IL6 + IL6_RC   ==>   IL6_LRC       ! IL6stim als STRG
+
+! Bindung und Phosphorylierung von SHP2
+$REACTION   SHP2 Bindung am IL6_LRC                : p(05)  :                :            IL6_LRC + SHP2   ==>   IL6_LRC_SHP2
+$REACTION   SHP2 Bindung am GMCSF_LRC              : p(05)  :                :          GMCSF_LRC + SHP2   ==>   GMCSF_LRC_SHP2
+$REACTION   pSHP2 loest vom IL6_LRC                : p(06)  :                :              IL6_LRC_SHP2   ==>   IL6_LRC + pSHP2
+$REACTION   pSHP2 loest vom GMCSF_LRC              : p(07)  :                :            GMCSF_LRC_SHP2   ==>   GMCSF_LRC + pSHP2
+
+! MAP Kinase Pathway
+$REACTION   Aktivierung von uERK durch xx_LRC_SHP2 : p(08)  : (GMCSF_LRC_SHP2 + IL6_LRC_SHP2)  :    uERK   ==>   pERK
+$REACTION   pERK Translokation in Nukleus          : p(09)  :                :                      pERK   ==>   pERK_nuc
+$REACTION   pERK_nuc Einfacher Export              : p(10)  :                :                  pERK_nuc   ==>   uERK
+
+! Rezeptor-Blockade durch SOCS3 
+$REACTION   SOCS3 deaktiviert IL6_LRC              : p(11)  :                :           IL6_LRC + SOCS3   ==>   IL6_LRC_SOCS3
+$REACTION   SOCS3 deaktiviert GMCSF_LRC            : p(11)  :                :         GMCSF_LRC + SOCS3   ==>   GMCSF_LRC_SOCS3
+
+! IL6-Signaltransduktion via JAK/STAT
+$REACTION   STAT3 Phosphorylierung am IL6_LRC      : p(12)  : (IL6_LRC + IL6_LRC_SHP2) :           STAT3   ==>   pSTAT3
+$REACTION   pSTAT3 Translokation in Nukleus        : p(13)  :                :                    pSTAT3   ==>   pSTAT3_nuc
+$REACTION   pSTAT3_nuc Einfacher Export            : p(14)  :                :                pSTAT3_nuc   ==>   STAT3
+$REACTION   Induktion SOCS3_mRNA und Export        : p(15)  :                :                pSTAT3_nuc   ==>   STAT3 + SOCS3_mRNA
+$REACTION   Translation von SOCS3                  : p(16)  :                :                SOCS3_mRNA   ==>   10 * SOCS3
+
+! pSHP2 Phosphataseaktivitaet
+$REACTION   pSHP2 dephosphoryliert pSTAT3     : 0010*p(17)  :                :            pSTAT3 + pSHP2   ==>   STAT3 + SHP2
+$REACTION   pSHP2 dephosphoryliert IL6_LRC         : p(17)  :                :           IL6_LRC + pSHP2   ==>   IL6_RC + SHP2
+$REACTION   pSHP2 dephosphoryliert IL6_LRC_SHP2    : p(17)  :                :      IL6_LRC_SHP2 + pSHP2   ==>   IL6_RC + 2*SHP2
+$REACTION   pSHP2 dephosphoryliert GMCSF_LRC       : p(17)  :                :         GMCSF_LRC + pSHP2   ==>   GMCSF_RC + SHP2
+$REACTION   pSHP2 dephosphoryliert GMCSF_LRC_SHP2  : p(17)  :                :    GMCSF_LRC_SHP2 + pSHP2   ==>   GMCSF_RC + 2*SHP2
+$REACTION   Deaktivierung von pSHP2                : p(18)  :                :                     pSHP2   ==>   SHP2
+
+$REACTION   STAT3 Phosphorylierung am GMCSF_LRC    : p(21)  : (GMCSF_LRC + GMCSF_LRC_SHP2) :       STAT3   ==>   pSTAT3
+
+
+
+! Deaktivierung des pSTAT3-Inhibitors inhibix durch aktiven GMCSF-Rezeptor
+$REACTION   inhibix Zerfall durch akt. GMCSFR       : p(19)  : (GMCSF_LRC + GMCSF_LRC_SHP2) :    inhibix   ==> 
+$REACTION   inhibix deaktiviert IL6_LRC             : p(20)  : inhibix       :                   IL6_LRC   ==>   IL6_RC
+$REACTION   inhibix deaktiviert IL6_LRC_SHP2        : p(20)  : inhibix       :              IL6_LRC_SHP2   ==>   IL6_RC + SHP2
+
+
+
+
+
+
+! Potenzielle Reaktionen 
+! ======================
+
+! GMCSF-Signaltransduktion auf STAT3 (schwach) [für kleinen pSTAT3-Level auch bei IL6-Blockade]
+
+
+!$REACTION   SOCS3 Zerfall                          : p(16)  :                :                     SOCS3   ==>
+
+! Rezeptor-Recycling
+!$REACTION   IL6-Rezeptorrecycling                  : p(xx)  :                :                   IL6_LRC   ==>   IL6_RC
+!$REACTION   GMCSF-Rezeptorrecycling                : p(xx)  :                :                 GMCSF_LRC   ==>   GMCSF_RC
+!$REACTION   IL6-Rezeptorrecycling SHP2             : p(xx)  :                :              IL6_LRC_SHP2   ==>   IL6_RC + SHP2
+!$REACTION   GMCSF-Rezeptorrecycling SHP2           : p(xx)  :                :            GMCSF_LRC_SHP2   ==>   GMCSF_RC + SHP2
+
+! IL6- und GMCSF-Zerfall
+!$REACTION   IL6-Zerfall                            : p(yy)  :                :                       IL6   ==>
+!$REACTION   GMCSF-Zerfall                          : p(yy)  :                :                     GMCSF   ==>
